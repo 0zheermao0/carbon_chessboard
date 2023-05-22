@@ -66,13 +66,14 @@ if __name__ == "__main__":
             types, boxes = get_chess_boxes(frame)
             curr_pos = get_chess_pos(centers, types, boxes)
             changed_pos = detect_changed(prev_pos, curr_pos)
-            try: 
-                client_socket.send(str(changed_pos).encode())
-            except Exception as e:
-                # 重新等待客户端连接
-                print(f"client disconnected, waiting for new connection...\n")
-                client_socket, address = server_socket.accept()
-                client_socket.send(str(changed_pos).encode())
+            if changed_pos != []:
+                try: 
+                    client_socket.send(str(changed_pos).encode())
+                except Exception as e:
+                    # 重新等待客户端连接
+                    print(f"client disconnected, waiting for new connection...\n")
+                    client_socket, address = server_socket.accept()
+                    client_socket.send(str(changed_pos).encode())
     
         # 更新前一帧
         prev_frame = curr_frame
