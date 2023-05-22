@@ -49,6 +49,7 @@ if __name__ == "__main__":
     client_socket.send(welcome_msg.encode())
     
     # 不断检测画面变动并向客户端发送消息
+    move_count = 0
     while True:
         # 获取当前帧
         ret, frame = cap.read()
@@ -59,21 +60,39 @@ if __name__ == "__main__":
         thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-        # 如果画面有变动，则向客户端发送消息
         if len(contours) > 0:
+            move_count += 1
             # frame = cv2.imread('./datasets/storage/2023-05-20 16.25.33.jpg')
-            print(f"camera detected movement, sending message...\n")
+            print(f"camera detected movement, detecting changed...\n")
             types, boxes = get_chess_boxes(frame)
             curr_pos = get_chess_pos(centers, types, boxes)
             changed_pos = detect_changed(prev_pos, curr_pos)
-            if changed_pos != []:
+            # changed_pos 不为空时且能检测到完整棋盘时才发送消息
+            if changed_pos != [] and 'chessboard' in types:
                 try: 
+                    print(f"chess status changed detected, sending message...\n")
                     client_socket.send(str(changed_pos).encode())
                 except Exception as e:
                     # 重新等待客户端连接
                     print(f"client disconnected, waiting for new connection...\n")
                     client_socket, address = server_socket.accept()
                     client_socket.send(str(changed_pos).encode())
+        # else: # 如果画面平息，move_count清零，识别棋子位置
+        #     if move_count > 60:
+        #         move_count = 0
+        #         types, boxes = get_chess_boxes(frame)
+        #         curr_pos = get_chess_pos(centers, types, boxes)
+        #         changed_pos = detect_changed(prev_pos, curr_pos)
+        #         # changed_pos 不为空时且types中包含'chessboard'时才发送消息
+        #         if changed_pos != [] and 'chessboard' in types:
+        #             try: 
+        #                 print(f"chess status changed detected, sending message...\n")
+        #                 client_socket.send(str(changed_pos).encode())
+        #             except Exception as e:
+        #                 # 重新等待客户端连接
+        #                 print(f"client disconnected, waiting for new connection...\n")
+        #                 client_socket, address = server_socket.accept()
+        #                 client_socket.send(str(changed_pos).encode())
     
         # 更新前一帧
         prev_frame = curr_frame

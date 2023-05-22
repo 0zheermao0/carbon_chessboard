@@ -40,12 +40,11 @@ def detect_changed(prev_pos: dict, curr_pos: dict) -> list:
     results = []
     for key in prev_pos.keys():
         if key not in curr_pos.keys():
-            results.append({'type': 0, 'index': key, 'build': prev_pos[key]})
+            return {'type': 0, 'index': key, 'build': prev_pos[key]}
     for key in curr_pos.keys():
         if key not in prev_pos.keys():
-            results.append({'type': 1, 'index': key, 'build': curr_pos[key]})
+            return {'type': 1, 'index': key, 'build': curr_pos[key]}
 
-    return results
 
 # if __name__ == "__main__": 
 #     centers = get_chessboard_center(cv2.imread('/mnt/c/Users/Joey/Pictures/4.jpg'))

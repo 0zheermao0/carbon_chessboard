@@ -1,8 +1,8 @@
 
-Chessboard  - v1 2023-05-20 6:41pm
+Chessboard  - v4 2023-05-22 8:33pm
 ==============================
 
-This dataset was exported via roboflow.com on May 20, 2023 at 10:44 AM GMT
+This dataset was exported via roboflow.com on May 22, 2023 at 12:34 PM GMT
 
 Roboflow is an end-to-end computer vision platform that helps you
 * collaborate with your team on computer vision projects
@@ -17,7 +17,7 @@ visit https://github.com/roboflow/notebooks
 
 To find over 100k other datasets and pre-trained models, visit https://universe.roboflow.com
 
-The dataset includes 143 images.
+The dataset includes 459 images.
 Chess-types are annotated in YOLOv8 format.
 
 The following pre-processing was applied to each image:
@@ -25,7 +25,8 @@ The following pre-processing was applied to each image:
 * Resize to 640x640 (Stretch)
 
 The following augmentation was applied to create 3 versions of each source image:
+* Equal probability of one of the following 90-degree rotations: none, clockwise, counter-clockwise, upside-down
 * Random brigthness adjustment of between -25 and +25 percent
-* Salt and pepper noise was applied to 1 percent of pixels
+* Random exposure adjustment of between -25 and +25 percent
 
 
