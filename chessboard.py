@@ -61,6 +61,10 @@ def get_chessboard_center(img: np.ndarray):
         # merge centers_sorted and a
         centers_sorted += a
 
+    # changed centers_sorted element's index
+    # change i=5, 21, 26, 30, 33, 35, 10, 16, 22, 27, 31, 34, 6, 11, 17, 23, 28, 32, 3, 7, 12, 18, 24, 29, 1, 4, 8, 13, 19, 25, 0, 2, 5, 9, 14, 20 to i=0, 1, 2, 3, 4, 5, 6, 7, 8, 9...35
+    centers_sorted = [centers_sorted[5], centers_sorted[21], centers_sorted[26], centers_sorted[30], centers_sorted[33], centers_sorted[35], centers_sorted[10], centers_sorted[16], centers_sorted[22], centers_sorted[27], centers_sorted[31], centers_sorted[34], centers_sorted[6], centers_sorted[11], centers_sorted[17], centers_sorted[23], centers_sorted[28], centers_sorted[32], centers_sorted[3], centers_sorted[7], centers_sorted[12], centers_sorted[18], centers_sorted[24], centers_sorted[29], centers_sorted[1], centers_sorted[4], centers_sorted[8], centers_sorted[13], centers_sorted[19], centers_sorted[25], centers_sorted[0], centers_sorted[2], centers_sorted[5], centers_sorted[9], centers_sorted[14], centers_sorted[20]]
+
     return centers_sorted
 
 # if __name__ == "__main__":
