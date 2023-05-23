@@ -1,5 +1,10 @@
 {
-	"SERVER_IP": "0.0.0.0",
+	"SERVER_IP": "127.0.0.1",
 	"SERVER_PORT": 8080,
-	"CAM": 0
+	"CAM": 0,
+	"GRID_AREA_THRESHOLD": 880,
+	"STILL_THRESHOLD": 50,
+	"MOVE_DETECT_THRESHOLD": 4000,
+	"MODEL_PATH": "./models/chess.pt",
+	"comment": "this is a comment"
 }
