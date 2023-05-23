@@ -70,9 +70,9 @@ def get_chessboard_center(img: np.ndarray):
         centers_sorted += a
 
     # changed centers_sorted element's index
-    # change i=5, 21, 26, 30, 33, 35, 10, 16, 22, 27, 31, 34, 6, 11, 17, 23, 28, 32, 3, 7, 12, 18, 24, 29, 1, 4, 8, 13, 19, 25, 0, 2, 5, 9, 14, 20 to i=0, 1, 2, 3, 4, 5, 6, 7, 8, 9...35
+    # change i = 20, 14, 9, 5, 2, 0, 25, 19, 13, 8, 4, 1, 29, 24, 18, 12, 7, 3, 32, 28, 23, 17, 11, 6, 34, 31, 27, 22, 16, 10, 35, 33, 30, 26, 21, 15 to 0, 1, 2, 3, 4, 5...35
     if centers_sorted != [] and len(centers_sorted) == 36:
-        centers_sorted = [centers_sorted[15], centers_sorted[21], centers_sorted[26], centers_sorted[30], centers_sorted[33], centers_sorted[35], centers_sorted[10], centers_sorted[16], centers_sorted[22], centers_sorted[27], centers_sorted[31], centers_sorted[34], centers_sorted[6], centers_sorted[11], centers_sorted[17], centers_sorted[23], centers_sorted[28], centers_sorted[32], centers_sorted[3], centers_sorted[7], centers_sorted[12], centers_sorted[18], centers_sorted[24], centers_sorted[29], centers_sorted[1], centers_sorted[4], centers_sorted[8], centers_sorted[13], centers_sorted[19], centers_sorted[25], centers_sorted[0], centers_sorted[2], centers_sorted[5], centers_sorted[9], centers_sorted[14], centers_sorted[20]]
+        centers_sorted = [centers_sorted[20], centers_sorted[14], centers_sorted[9], centers_sorted[5], centers_sorted[2], centers_sorted[0], centers_sorted[25], centers_sorted[19], centers_sorted[13], centers_sorted[8], centers_sorted[4], centers_sorted[1], centers_sorted[29], centers_sorted[24], centers_sorted[18], centers_sorted[12], centers_sorted[7], centers_sorted[3], centers_sorted[32], centers_sorted[28], centers_sorted[23], centers_sorted[17], centers_sorted[11], centers_sorted[6], centers_sorted[34], centers_sorted[31], centers_sorted[27], centers_sorted[22], centers_sorted[16], centers_sorted[10], centers_sorted[35], centers_sorted[33], centers_sorted[30], centers_sorted[26], centers_sorted[21], centers_sorted[15]]
     else:
         print(f"centers_sorted detect error with {centers_sorted} and length {len(centers_sorted)}")
 
@@ -83,22 +83,22 @@ if __name__ == "__main__":
     parse.add_argument('--image', type=str, default='/mnt/c/Users/Joey/Pictures/20.png', help='image path')
     args = parse.parse_args()
     # # Load image
-    cap = cv2.VideoCapture(0)
-    cap.set(3, 1920)
-    cap.set(4, 1080)
+    # cap = cv2.VideoCapture(0)
+    # cap.set(3, 1920)
+    # cap.set(4, 1080)
     # 摄像头是否打开，如果没打开则提示并终止程序
-    if not cap.isOpened():
-        print('Error: Camera is not opened!')
-        exit(-1)
+    # if not cap.isOpened():
+    #     print('Error: Camera is not opened!')
+    #     exit(-1)
     # 获取第一帧
-    ret, img = cap.read()
-    # img = cv2.imread(args.image)
+    # ret, img = cap.read()
+    img = cv2.imread(args.image)
     # print(f"centers: {get_chessboard_center(img)}")
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 60)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 30)
     # close操作去除杂点
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     cv2.imshow('thresh', thresh)
@@ -111,10 +111,10 @@ if __name__ == "__main__":
     # 找到能近似矩形且面积不太小的轮廓
     approx_contours = []
     for contour in contours:
-        epsilon = 0.15 * cv2.arcLength(contour, True)
+        epsilon = 0.11 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         area = cv2.contourArea(approx)
-        if len(approx) == 4 and area > 880:
+        if len(approx) == 4 and area > 3200:
             approx_contours.append(approx)
     
     # 绘制这些矩形的中心点
@@ -128,15 +128,23 @@ if __name__ == "__main__":
         centers.append((cx, cy))
         # cv2.circle(img, (cx, cy), 5, (0, 255, 0), -1)
     
-    # 去除相隔距离过近的点
+    # 去除相隔距离较近的点, 两点之间欧式距离小于50的点视为同一点
     centers.sort(key=lambda x: x[0])
     centers.sort(key=lambda x: x[1])
     centers = np.array(centers)
-    centers = np.unique(centers, axis=0)
+    filter_centers = []
+    for point in centers:
+        is_similar = False
+        for filter_point in filter_centers:
+            if np.linalg.norm(point-filter_point) < 50:
+                is_similar = True
+                break
+        if not is_similar:
+            filter_centers.append(point)
 
+    centers = np.array(filter_centers)
     # 先按y坐标，再按x坐标，centers进行排序，y坐标在一定范围内的点视为同一行
     centers = centers.tolist()
-    # centers.sort(key=lambda x: (x[1] // 60, x[0]))
     centers.sort(key=lambda x: x[1])
     num_list=[1,2,3,4,5,6,5,4,3,2,1]
     # loop0: [[975, 90]]
@@ -148,8 +156,9 @@ if __name__ == "__main__":
         # merge centers_sorted and a
         centers_sorted += a
 
-    if centers_sorted != [] and len(centers_sorted) == 36:
-        centers_sorted = [centers_sorted[15], centers_sorted[21], centers_sorted[26], centers_sorted[30], centers_sorted[33], centers_sorted[35], centers_sorted[10], centers_sorted[16], centers_sorted[22], centers_sorted[27], centers_sorted[31], centers_sorted[34], centers_sorted[6], centers_sorted[11], centers_sorted[17], centers_sorted[23], centers_sorted[28], centers_sorted[32], centers_sorted[3], centers_sorted[7], centers_sorted[12], centers_sorted[18], centers_sorted[24], centers_sorted[29], centers_sorted[1], centers_sorted[4], centers_sorted[8], centers_sorted[13], centers_sorted[19], centers_sorted[25], centers_sorted[0], centers_sorted[2], centers_sorted[5], centers_sorted[9], centers_sorted[14], centers_sorted[20]]
+    if centers_sorted != [] and len(filter_centers) == 36:
+        centers_sorted = [centers_sorted[20], centers_sorted[14], centers_sorted[9], centers_sorted[5], centers_sorted[2], centers_sorted[0], centers_sorted[25], centers_sorted[19], centers_sorted[13], centers_sorted[8], centers_sorted[4], centers_sorted[1], centers_sorted[29], centers_sorted[24], centers_sorted[18], centers_sorted[12], centers_sorted[7], centers_sorted[3], centers_sorted[32], centers_sorted[28], centers_sorted[23], centers_sorted[17], centers_sorted[11], centers_sorted[6], centers_sorted[34], centers_sorted[31], centers_sorted[27], centers_sorted[22], centers_sorted[16], centers_sorted[10], centers_sorted[35], centers_sorted[33], centers_sorted[30], centers_sorted[26], centers_sorted[21], centers_sorted[15]]
+        # centers_sorted = [centers_sorted[15], centers_sorted[21], centers_sorted[26], centers_sorted[30], centers_sorted[33], centers_sorted[35], centers_sorted[10], centers_sorted[16], centers_sorted[22], centers_sorted[27], centers_sorted[31], centers_sorted[34], centers_sorted[6], centers_sorted[11], centers_sorted[17], centers_sorted[23], centers_sorted[28], centers_sorted[32], centers_sorted[3], centers_sorted[7], centers_sorted[12], centers_sorted[18], centers_sorted[24], centers_sorted[29], centers_sorted[1], centers_sorted[4], centers_sorted[8], centers_sorted[13], centers_sorted[19], centers_sorted[25], centers_sorted[0], centers_sorted[2], centers_sorted[5], centers_sorted[9], centers_sorted[14], centers_sorted[20]]
 
     print(f"centers_sorted: {centers_sorted}")
     # centers=[x for i in centers for x in i]

@@ -3,102 +3,65 @@
 # Date: :call strftime("%Y-%m-%d %H:%M")
 # Description: 
 # Version: 1.0
-
-import socket
+from ultralytics import YOLO
 import cv2
 from chessboard import get_chessboard_center
-from predict import get_chess_boxes, get_chess_pos, detect_changed
-import json
-import os
+import numpy as np
 
-config_path = './config.json'
-if os.path.exists(config_path):
-    with open(config_path, 'r') as f:
-        config = json.load(f)
-        SERVER_IP = config['SERVER_IP']
-        SERVER_PORT = config['SERVER_PORT']
-        cam = config['CAM']
+# Load a model
+model = YOLO('./models/chess.pt')  # build from YAML and transfer weights
 
-# 定义摄像头
-cap = cv2.VideoCapture(cam)
-cap.set(3, 1920)
-cap.set(4, 1080)
-# 摄像头是否打开，如果没打开则提示并终止程序
-if not cap.isOpened():
-    print('Error: Camera is not opened!')
-    exit(-1)
-
-# 获取第一帧
-ret, frame = cap.read()
-prev_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-prev_pos = {}
-# 获取棋盘格中心点
-centers = get_chessboard_center(frame)
-if centers != []:
-    print(f"get centers {centers} successfully!")
-else:
-    print(f"no chessboard centers detected, initialize failed...")
-    exit(1)
-# centers = get_chessboard_center(cv2.imread('/mnt/c/Users/Joey/Pictures/4.jpg'))
-frame_count = 0
-
-if __name__ == "__main__":
-    # 创建一个Socket对象
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    
-    # 绑定服务器IP地址和端口号
-    server_socket.bind((SERVER_IP, SERVER_PORT))
-    
-    # 开始监听客户端连接请求
-    print("waiting conn")
-    server_socket.listen()
-    client_socket, address = server_socket.accept()
-    
-    welcome_msg = 'connect success!'
-    # client_socket.send(welcome_msg.encode())
-    
-    # 不断检测画面变动并向客户端发送消息
-    while True:
-        # 获取当前帧
-        ret, frame = cap.read()
-        curr_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # cv 
-    
-        # 比较当前帧和前一帧
-        diff = cv2.absdiff(curr_frame, prev_frame)
-        thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-        thresh = cv2.resize(thresh, (480, 480))
-        # contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-        if cv2.countNonZero(thresh) > 4000:
-            print(f"camera detected movement, recording changed...\n")
+def get_chess_boxes(img):
+    results = model(img)
+    types = []
+    boxes = []
+    for result in results:
+        types.append(result.boxes.cls.cpu().tolist())
+        boxes.append(result.boxes.xyxy.cpu().tolist())
+    types_map = {0: 7, 2: 12, 3: 10, 4: 14, 5: 11, 6: 6, 7: 8, 8: 4, 9: 5, 10: 13, 11: 9, 12: 15}
+    for i, t in enumerate(types[0]):
+        if t == 1:
+            types[0].pop(i)
+            boxes[0].pop(i)
         else:
-            # changed_pos 不为空时发送消息
-            frame_count += 1
-            types, boxes = get_chess_boxes(frame)
-            curr_pos = get_chess_pos(centers, types, boxes)
-            changed_pos = detect_changed(prev_pos, curr_pos)
-            if changed_pos != {} and changed_pos != None and frame_count >= 50:
-                try: 
-                    print(str(changed_pos).encode())
-                    client_socket.send(str(changed_pos).encode())
-                except ConnectionResetError as cre:
-                    # 重新等待客户端连接
-                    print(f"client disconnected, waiting for new connection...\n")
-                    client_socket, address = server_socket.accept()
-                    client_socket.send(str(changed_pos).encode())
-                except Exception as e:
-                    print(e)
-                    continue
-                frame_count = 0
-            print(f"camera detected no movement, preparing to send msg...\n")
-            prev_pos = curr_pos
-    
-        # 更新前一帧
-        prev_frame = curr_frame
-    
-    # 关闭Socket连接
-    cap.release()
-    client_socket.close()
-    server_socket.close()
+            t[i] = types_map[t]
+
+    return [int(i) for i in types[0]], boxes[0]
+
+def get_chess_pos(centers, types, boxes):
+    # 遍历每一个boxes,先将boxes向着boxes的中心点缩小30%，如果centers在boxes内，则将该chess的index和type存入pos
+    # 其中pos的key是chess的index，value是chess的类型
+    pos = {}
+    for i, box in enumerate(boxes):
+        for j, center in enumerate(centers):
+            if center[0] > box[0] and center[0] < box[2] and center[1] > box[1] and center[1] < box[3]:
+                pos[j] = types[i]
+                break
+    # sort pos by key
+    pos = dict(sorted(pos.items(), key=lambda item: item[0]))
+    return pos
+
+def detect_changed(prev_pos: dict, curr_pos: dict) -> list:
+    # compare prev_pos and curr_pos
+    # if new chess added, return {type: 1, index: {changed chess board index}, build: {changed chess type}}
+    # if chess removed, return {type: 0, index: {changed chess board index}, build: {changed chess type}}
+    for key in prev_pos.keys():
+        if key not in curr_pos.keys():
+            return {'type': 0, 'index': key, 'build': prev_pos[key]}
+    for key in curr_pos.keys():
+        if key not in prev_pos.keys():
+            return {'type': 1, 'index': key, 'build': curr_pos[key]}
+    print(f"detect changed function detect no change, return None")    
+    return None
+
+
+# if __name__ == "__main__": 
+#     centers = get_chessboard_center(cv2.imread('/mnt/c/Users/Joey/Pictures/4.jpg'))
+# 
+#     img = cv2.imread('./datasets/storage/2023-05-20 16.25.33.jpg')
+# 
+#     types, boxes = get_chess_boxes(img)
+#     pos = get_chess_pos(centers, types, boxes)
+#     print(pos)
+
 

@@ -7,9 +7,9 @@
 from ultralytics import YOLO
 
 # Load a model
-model = YOLO('yolov8n.yaml')  # build a new model from YAML
-model = YOLO('yolov8n.pt')  # load a pretrained model (recommended for training)
-model = YOLO('yolov8n.yaml').load('/mnt/d/chessboard/ultralytics/runs/detect/train3/weights/best.pt')  # build from YAML and transfer weights
+model = YOLO('yolov8s.yaml')  # build a new model from YAML
+model = YOLO('yolov8s.pt')  # load a pretrained model (recommended for training)
+model = YOLO('yolov8s.yaml').load('/mnt/d/chessboard/yolov8s.pt')  # build from YAML and transfer weights
 
 # Train the model
 if __name__ == "__main__": 

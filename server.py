@@ -21,6 +21,8 @@ if os.path.exists(config_path):
 
 # 定义摄像头
 cap = cv2.VideoCapture(cam)
+cap.set(3, 1920)
+cap.set(4, 1080)
 # 摄像头是否打开，如果没打开则提示并终止程序
 if not cap.isOpened():
     print('Error: Camera is not opened!')
@@ -32,7 +34,13 @@ prev_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 prev_pos = {}
 # 获取棋盘格中心点
 centers = get_chessboard_center(frame)
+if centers != [] and len(centers) == 36:
+    print(f"get centers {centers} successfully!")
+else:
+    print(f"no chessboard centers detected, initialize failed...")
+    exit(1)
 # centers = get_chessboard_center(cv2.imread('/mnt/c/Users/Joey/Pictures/4.jpg'))
+frame_count = 0
 
 if __name__ == "__main__":
     # 创建一个Socket对象
@@ -42,63 +50,55 @@ if __name__ == "__main__":
     server_socket.bind((SERVER_IP, SERVER_PORT))
     
     # 开始监听客户端连接请求
+    print("waiting conn")
     server_socket.listen()
     client_socket, address = server_socket.accept()
     
     welcome_msg = 'connect success!'
-    client_socket.send(welcome_msg.encode())
+    # client_socket.send(welcome_msg.encode())
     
     # 不断检测画面变动并向客户端发送消息
-    move_count = 0
     while True:
         # 获取当前帧
         ret, frame = cap.read()
         curr_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # cv 
     
         # 比较当前帧和前一帧
         diff = cv2.absdiff(curr_frame, prev_frame)
         thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        thresh = cv2.resize(thresh, (480, 480))
+        # contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-        if len(contours) > 0:
-            move_count += 1
-            # frame = cv2.imread('./datasets/storage/2023-05-20 16.25.33.jpg')
-            print(f"camera detected movement, detecting changed...\n")
+        if cv2.countNonZero(thresh) > 4000:
+            print(f"camera detected movement, recording changed...\n")
+        else:
+            # changed_pos 不为空时发送消息
+            frame_count += 1
             types, boxes = get_chess_boxes(frame)
             curr_pos = get_chess_pos(centers, types, boxes)
             changed_pos = detect_changed(prev_pos, curr_pos)
-            # changed_pos 不为空时且能检测到完整棋盘时才发送消息
-            if changed_pos != [] and 'chessboard' in types:
+            if changed_pos != {} and changed_pos != None and frame_count >= 50:
                 try: 
-                    print(f"chess status changed detected, sending message...\n")
+                    print(str(changed_pos).encode())
                     client_socket.send(str(changed_pos).encode())
-                except Exception as e:
+                except ConnectionResetError as cre:
                     # 重新等待客户端连接
                     print(f"client disconnected, waiting for new connection...\n")
                     client_socket, address = server_socket.accept()
                     client_socket.send(str(changed_pos).encode())
-        # else: # 如果画面平息，move_count清零，识别棋子位置
-        #     if move_count > 60:
-        #         move_count = 0
-        #         types, boxes = get_chess_boxes(frame)
-        #         curr_pos = get_chess_pos(centers, types, boxes)
-        #         changed_pos = detect_changed(prev_pos, curr_pos)
-        #         # changed_pos 不为空时且types中包含'chessboard'时才发送消息
-        #         if changed_pos != [] and 'chessboard' in types:
-        #             try: 
-        #                 print(f"chess status changed detected, sending message...\n")
-        #                 client_socket.send(str(changed_pos).encode())
-        #             except Exception as e:
-        #                 # 重新等待客户端连接
-        #                 print(f"client disconnected, waiting for new connection...\n")
-        #                 client_socket, address = server_socket.accept()
-        #                 client_socket.send(str(changed_pos).encode())
+                except Exception as e:
+                    print(e)
+                    continue
+                frame_count = 0
+            print(f"camera detected no movement, preparing to send msg...\n")
+            prev_pos = curr_pos
     
         # 更新前一帧
         prev_frame = curr_frame
-        prev_pos = curr_pos
     
     # 关闭Socket连接
     cap.release()
     client_socket.close()
     server_socket.close()
+
