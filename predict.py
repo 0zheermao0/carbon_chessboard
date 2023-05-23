@@ -1,4 +1,3 @@
-# Author: Joey
 # Email: zengjiayi666@gmail.com
 # Date: :call strftime("%Y-%m-%d %H:%M")
 # Description: 
@@ -10,6 +9,33 @@ import numpy as np
 
 # Load a model
 model = YOLO('./models/chess.pt')  # build from YAML and transfer weights
+
+def calculate_distance(point1, point2):
+    # 计算两点之间的欧几里德距离
+    x1, y1 = point1
+    x2, y2 = point2
+    distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+    return distance
+
+def determine_chessboard_position(chess_piece_box, centers):
+    # 计算棋子中心点坐标
+    chess_piece_center = ((chess_piece_box[0] + chess_piece_box[2]) // 2, (chess_piece_box[1] + chess_piece_box[3]) // 2)
+
+    # 初始化最小距离和落点位置
+    min_distance = float('inf')
+    target_position = None
+
+    # 遍历棋盘格子中心点
+    for i, center in enumerate(centers):
+        # 计算棋子中心点与格子中心点之间的距离
+        distance = calculate_distance(chess_piece_center, center)
+
+        # 更新最小距离和落点位置
+        if distance < min_distance:
+            min_distance = distance
+            target_position = i
+
+    return target_position
 
 def get_chess_boxes(img):
     results = model(img)
@@ -29,14 +55,10 @@ def get_chess_boxes(img):
     return [int(i) for i in types[0]], boxes[0]
 
 def get_chess_pos(centers, types, boxes):
-    # 遍历每一个boxes,先将boxes向着boxes的中心点缩小30%，如果centers在boxes内，则将该chess的index和type存入pos
     # 其中pos的key是chess的index，value是chess的类型
     pos = {}
     for i, box in enumerate(boxes):
-        for j, center in enumerate(centers):
-            if center[0] > box[0] and center[0] < box[2] and center[1] > box[1] and center[1] < box[3]:
-                pos[j] = types[i]
-                break
+        pos[determine_chessboard_position(box, centers)] = types[i]
     # sort pos by key
     pos = dict(sorted(pos.items(), key=lambda item: item[0]))
     return pos

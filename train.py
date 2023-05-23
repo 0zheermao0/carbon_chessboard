@@ -13,5 +13,5 @@ model = YOLO('yolov8s.yaml').load('/mnt/d/chessboard/yolov8s.pt')  # build from 
 
 # Train the model
 if __name__ == "__main__": 
-    model.train(data='./datasets/data.yaml', epochs=300, imgsz=640, patience=150, batch=32)
+    model.train(data='./datasets/data.yaml', epochs=300, imgsz=640, patience=100, batch=16)
 
