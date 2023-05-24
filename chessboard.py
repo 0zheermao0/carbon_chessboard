@@ -16,12 +16,15 @@ if os.path.exists(config_path):
     with open(config_path, 'r') as f:
         config = json.load(f)
         GRID_AREA = config['GRID_AREA_THRESHOLD']
+        THRESHOLD_DECLINE = config['THRESHOLD_DECLINE']
+        REC_EPSILON = config['REC_EPSILON']
+        CLOSE_KERNEL_SIZE = config['CLOSE_KERNEL_SIZE']
 
 def get_chessboard_center(img: np.ndarray):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 60)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, THRESHOLD_DECLINE)
     # close操作去除杂点
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (9, 9))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (CLOSE_KERNEL_SIZE, CLOSE_KERNEL_SIZE))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     # thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
     
@@ -33,7 +36,7 @@ def get_chessboard_center(img: np.ndarray):
     # 找到能近似矩形且面积不太小的轮廓
     approx_contours = []
     for contour in contours:
-        epsilon = 0.15 * cv2.arcLength(contour, True)
+        epsilon = REC_EPSILON * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         area = cv2.contourArea(approx)
         if len(approx) == 4 and area > GRID_AREA:
@@ -96,7 +99,7 @@ if __name__ == "__main__":
     # print(f"centers: {get_chessboard_center(img)}")
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, 30)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 25, THRESHOLD_DECLINE)
     # close操作去除杂点
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
@@ -114,7 +117,7 @@ if __name__ == "__main__":
         epsilon = 0.11 * cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, epsilon, True)
         area = cv2.contourArea(approx)
-        if len(approx) == 4 and area > 3200:
+        if len(approx) == 4 and area > GRID_AREA:
             approx_contours.append(approx)
     
     # 绘制这些矩形的中心点

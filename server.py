@@ -18,11 +18,14 @@ if os.path.exists(config_path):
         SERVER_IP = config['SERVER_IP']
         SERVER_PORT = config['SERVER_PORT']
         cam = config['CAM']
+        WIDTH = config['WIDTH']
+        HEIGHT = config['HEIGHT']
+        MOVE_DETECT_THRESHOLD = config['MOVE_DETECT_THRESHOLD']
 
 # 定义摄像头
 cap = cv2.VideoCapture(cam)
-cap.set(3, 1920)
-cap.set(4, 1080)
+cap.set(3, WIDTH)
+cap.set(4, HEIGHT)
 # 摄像头是否打开，如果没打开则提示并终止程序
 if not cap.isOpened():
     print('Error: Camera is not opened!')
@@ -70,7 +73,7 @@ if __name__ == "__main__":
         thresh = cv2.resize(thresh, (480, 480))
         # contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
-        if cv2.countNonZero(thresh) > 4000:
+        if cv2.countNonZero(thresh) > MOVE_DETECT_THRESHOLD:
             print(f"camera detected movement, recording changed...\n")
         else:
             # changed_pos 不为空时发送消息

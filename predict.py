@@ -6,9 +6,18 @@ from ultralytics import YOLO
 import cv2
 from chessboard import get_chessboard_center
 import numpy as np
+import json
+import os
+
+# load config
+config_path = './config.json'
+if os.path.exists(config_path):
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+        MODEL_PATH = config['MODEL_PATH']
 
 # Load a model
-model = YOLO('./models/chess.pt')  # build from YAML and transfer weights
+model = YOLO(MODEL_PATH)  # build from YAML and transfer weights
 
 def calculate_distance(point1, point2):
     # 计算两点之间的欧几里德距离

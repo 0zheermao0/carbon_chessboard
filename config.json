@@ -2,9 +2,17 @@
 	"SERVER_IP": "127.0.0.1",
 	"SERVER_PORT": 8080,
 	"CAM": 0,
-	"GRID_AREA_THRESHOLD": 880,
+	"WIDTH": 1920,
+	"HEIGHT": 1080,
+
+	"THRESHOLD_DECLINE": 60,
+	"CLOSE_KERNEL_SIZE": 9,
+	"REC_EPSILON": 0.1,
+	"GRID_AREA_THRESHOLD": 3200,
+
 	"STILL_THRESHOLD": 50,
 	"MOVE_DETECT_THRESHOLD": 4000,
 	"MODEL_PATH": "./models/chess.pt",
-	"comment": "this is a comment"
+
+	"comment": "block 1 is server.py config determing the server ip, port, which camera to use and the resolution of the camera; \nblock2 is the config for the chessboard detection, if grid edge is not clear in thresh img, decrease the THRESHOLD_DECLINE or the CLOSE_KERNEL_SIZE, to raise the threshold to detect rectangle, increase the REC_EPSILON, to exclude the small rectangle like chess, decrease the GRID_AREA_THRESHOLD; \nblock3 is the config for the predict.py, STILL_THRESHOLD is the threshold for the still image, MOVE_DETECT_THRESHOLD is the threshold for the move detection, MODEL_PATH is the path to the yolo8 model."
 }
