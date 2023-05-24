@@ -65,9 +65,13 @@ def get_chess_boxes(img):
 
 def get_chess_pos(centers, types, boxes):
     # 其中pos的key是chess的index，value是chess的类型
+    # 如果centers中的点在boxes中的某个box内，则认为该棋子在该中心点对应的格子内
     pos = {}
     for i, box in enumerate(boxes):
-        pos[determine_chessboard_position(box, centers)] = types[i]
+        for j, center in enumerate(centers):
+            if center[0] > box[0] and center[0] < box[2] and center[1] > box[1] and center[1] < box[3]:
+                pos[j] = types[i]
+                break
     # sort pos by key
     pos = dict(sorted(pos.items(), key=lambda item: item[0]))
     return pos

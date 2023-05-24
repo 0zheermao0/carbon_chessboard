@@ -96,6 +96,8 @@ if __name__ == "__main__":
     # 获取第一帧
     # ret, img = cap.read()
     img = cv2.imread(args.image)
+    # 裁剪掉左边的一部分
+    # img = img[:, 200:]
     # print(f"centers: {get_chessboard_center(img)}")
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
