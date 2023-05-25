@@ -20,6 +20,7 @@ if os.path.exists(config_path):
         cam = config['CAM']
         WIDTH = config['WIDTH']
         HEIGHT = config['HEIGHT']
+        STRLL_THRESHOLD = config['STRLL_THRESHOLD']
         MOVE_DETECT_THRESHOLD = config['MOVE_DETECT_THRESHOLD']
 
 # 定义摄像头
@@ -81,7 +82,7 @@ if __name__ == "__main__":
             types, boxes = get_chess_boxes(frame)
             curr_pos = get_chess_pos(centers, types, boxes)
             changed_pos = detect_changed(prev_pos, curr_pos)
-            if changed_pos != {} and changed_pos != None and frame_count >= 50:
+            if changed_pos != {} and changed_pos != None and frame_count >= STILL_THRESHOLD:
                 try: 
                     print(str(changed_pos).encode())
                     client_socket.send(str(changed_pos).encode())

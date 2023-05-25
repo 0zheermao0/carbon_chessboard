@@ -59,7 +59,7 @@ def get_chess_boxes(img):
             types[0].pop(i)
             boxes[0].pop(i)
         else:
-            t[i] = types_map[t]
+            types[0][i] = types_map[t]
 
     return [int(i) for i in types[0]], boxes[0]
 
@@ -80,12 +80,20 @@ def detect_changed(prev_pos: dict, curr_pos: dict) -> list:
     # compare prev_pos and curr_pos
     # if new chess added, return {type: 1, index: {changed chess board index}, build: {changed chess type}}
     # if chess removed, return {type: 0, index: {changed chess board index}, build: {changed chess type}}
+    # if change number > 1, return None
+    if len(prev_pos) - len(curr_pos) > 1 or len(curr_pos) - len(prev_pos) > 1:
+        print(f"detect changed function detect more than one change, return None")
+        return None
+
+    # remove
     for key in prev_pos.keys():
         if key not in curr_pos.keys():
             return {'type': 0, 'index': key, 'build': prev_pos[key]}
+    # add
     for key in curr_pos.keys():
         if key not in prev_pos.keys():
             return {'type': 1, 'index': key, 'build': curr_pos[key]}
+
     print(f"detect changed function detect no change, return None")    
     return None
 
